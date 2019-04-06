@@ -76,27 +76,57 @@ class CameraRosBase {
    * @param time Acquisition time stamp
    */
   void PublishCamera(const ros::Time& time) {
-    const auto image_msg = boost::make_shared<sensor_msgs::Image>();
-    const auto cinfo_msg =
-        boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());
+
+    boost::shared_ptr<sensor_msgs::Image> image_msg;
+    try {
+       image_msg = boost::make_shared<sensor_msgs::Image>();
+    } catch (...) {
+      ROS_ERROR("Exception caught in PublishCamera: image_msg = boost::make_shared<sensor_msgs::Image>();");
+    }
+
+    boost::shared_ptr<sensor_msgs::CameraInfo> cinfo_msg;
+    try {
+       cinfo_msg = boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());
+    } catch (...) {
+      ROS_ERROR("Exception caught in PublishCamera: cinfo_msg = boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());");
+    }
+
     image_msg->header.frame_id = frame_id_;
     image_msg->header.stamp = time;
     if (Grab(image_msg, cinfo_msg)) {
       // Update camera info header
       cinfo_msg->header = image_msg->header;
-      camera_pub_.publish(image_msg, cinfo_msg);
+
+      try {
+        camera_pub_.publish(image_msg, cinfo_msg);
+      } catch (...) {
+        ROS_ERROR("Exception caught during publishing topic %s.", camera_pub_.getTopic().c_str());
+      }
+
       topic_diagnostic_.tick(image_msg->header.stamp);
     }
     diagnostic_updater_.update();
   }
 
   void Publish(const sensor_msgs::ImagePtr& image_msg) {
-    const auto cinfo_msg =
-        boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());
+
+    boost::shared_ptr<sensor_msgs::CameraInfo> cinfo_msg;
+    try {
+       cinfo_msg = boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());
+    } catch (...) {
+      ROS_ERROR("Exception caught in Publish: cinfo_msg = boost::make_shared<sensor_msgs::CameraInfo>(cinfo_mgr_.getCameraInfo());");
+    }
+
     // Update camera info header
     image_msg->header.frame_id = frame_id_;
     cinfo_msg->header = image_msg->header;
-    camera_pub_.publish(image_msg, cinfo_msg);
+
+    try {
+      camera_pub_.publish(image_msg, cinfo_msg);
+    } catch (...) {
+      ROS_ERROR("Exception caught during publishing topic %s.", camera_pub_.getTopic().c_str());
+    }
+
     topic_diagnostic_.tick(image_msg->header.stamp);
     diagnostic_updater_.update();
   }
